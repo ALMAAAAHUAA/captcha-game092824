@@ -1,0 +1,189 @@
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我不是機器人 - 選擇孔子</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .captcha-container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+        }
+
+        .highlight {
+            font-size: 120%; /* "孔子" 字放大20% */
+            font-weight: bold;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4列 */
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .image-item {
+            position: relative;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            display: block;
+        }
+
+        .image-item.selected img {
+            transform: scale(0.9); /* 图片缩小到90% */
+        }
+
+        .image-item.selected::after {
+            content: "";
+            position: absolute;
+            top: 5px; /* 勾勾距离顶部5px */
+            left: 5px; /* 勾勾距离左侧5px */
+            width: 24px; /* 勾勾的大小 */
+            height: 24px;
+            background-image: url('https://lh3.googleusercontent.com/pw/AP1GczPo4Eb9tdMZBjdqadpkaIPorG8etxxoZWNNWZz-15aliA_xLubLhftQ3J-ZRy_DgORKHO6K9vanBxCaWEuvZNRVgj4xCPL2rSo13xfjlUkrvqF-_P0=w400'); /* 蓝色勾勾图标 */
+            background-size: cover;
+            background-repeat: no-repeat;
+            z-index: 10;
+        }
+
+        #submit-btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #submit-btn:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center; /* 结果文本置中 */
+        }
+    </style>
+</head>
+<body>
+    <div class="captcha-container">
+        <h1>請選取所有包含 <span class="highlight">孔子</span> 的圖片</h1>
+        <div class="image-grid" id="image-grid">
+            <!-- 图片将通过 JavaScript 随机排序插入 -->
+        </div>
+        <button id="submit-btn">提交</button>
+        <p id="result"></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const imageGrid = document.getElementById('image-grid');
+            const submitBtn = document.getElementById('submit-btn');
+            const resultText = document.getElementById('result');
+
+            // 图片列表：前三张为正确答案的孔子图片
+            const images = [
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczNPgEjgGWjIwhFzUkeAb8Ga_A-xSKD-2Ur0HPCbp-0ws-wZCHnJyh6qn8h1FBDiIHyp_QmDCDeU8pw32ZxiJsVCiSEO5xEV3_booHWcrJoMoej37dw=w1200', correct: true },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczPaf4LAn349vLpr5sqHZfHdHSsK73khhbJPaPvSWQWT2_cfiJOSRlYJVYTRrHpCsZr2VzgSNo6qSaOtthgnOJwgLpzFntR7f6AZTEhda__CEEGuUIM=w1200', correct: true },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczOncrgdyX6CyUHaroGU0lplSHby-7jnA1xl_5SC9nxr-fpvE54PUv3f8yOUdtkDeQvJVOtFhYYs1uP4sxv7nGtoWjxBAxJnbJafgZVpLpUMJSCmwPc=w1200', correct: true },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczOKALOyN3qvXdrNR3MPWdIGZrEnMqJ7f1u4tVMK2zxlaYBFTw71zxpSFJTtUszNv3vVwZo4LkZ8qU8SntBt0T4yKy7gmoSnRPG7n5DRELmnLmCiVUw=w1200', correct: false },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczMMsiPvaahiE1r5WclD7vmeGMJX6iuuyGZZBhZSJzv1OrDi0S29wwXrK7_OBVV9yKM1LtLRpK55-GTc9RheD06AwJiN_7ZXKn89kYKaUv0USMgC-DM=w1200', correct: false },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczPtr2m12UZOl1ASqIWDDzBK7SomEUu2Z98y6DqipbMKRn5j6pclyw2ekSXBdc1nn_KM6-IH5K94NGerWb0ug4zkgBNJvsxPmAQXznA1sxJXAVosNnE=w1200', correct: false },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczOcTgm6jffd-7ujpv55um1e-LzYookfRa73K-xooeIBuXNl1WQR81Jt0oDyG3-t9_vet78uwDJxtLqtnU62NqOxLt92n_eDFm0EjayFlBg3y3cXLZw=w1200', correct: false },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczOn7muvX3e7igHja9f25TEzvT83QoPbCOIekQkxLm1fw3LZ-gfqY6XBHcS6pAioel6abMPfg9d8aMVV8WOF2JEalZbDXQgGM21wT8oyYSmm9OOL-o4=w1200', correct: false },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczPBo8mxPSI6aycjxUI1F4vclGRf2gaRQ1XoXHETBJf4sw86AUlJW63bKaX2wVWSfCPdPA79_rDOGiE4XanPhMRFlvzsZlbRpiSd8vrj5WguRgw7fYg=w1200', correct: false },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczP4r6kIoGDdef6kWnxYTa_e1hD8xOJz4c_38iTTyByD-VbIrmJ4X__NPedWGafvDvKYrJGSGhFs_W7ZSju_tCfI2y7a40eZDq7XNaE6OIlQ4Go3QoM=w1200', correct: false },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczNFaZTUCF4fBTV3WTfrZGaPFPpd1MgyoOclCuo-pxEmgtpRG3CxroP05C9ooTviBk7ChAuRpJhamZDNL872iMgmPenuW64xNVRWjnHI_e45gqHl1c0=w1200', correct: false },
+                { src: 'https://lh3.googleusercontent.com/pw/AP1GczOpqTKIj1-4RqyMzF9Vz-2a2qXldMnkiFZZZXF0Cjn-fIe4ENCyhS7KAxeMpXZySRfMPNgyTgUJ5EL7vSGoeWhOJQVjdjCfKg7yYOvHHnKs2JSnseU=w1200', correct: false }
+            ];
+
+            // 错误提示数组
+            const errorMessages = [
+                "噔愣~答錯囉! 孔子要哭囉~",
+                "哎呀!與孔子親密度不夠，是熟悉的陌生人?",
+                "可惡!!高中國文老師在角落跟孔子一起哭泣",
+                "驗證失敗，請再接再厲~",
+                "十二人行，必有我師焉(在哪裡?"
+            ];
+
+            // 正确答题的人数计数器
+            let correctAnswerCount = 0;
+
+            // 打乱图片顺序
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            // 加载并显示图片
+            function loadImages() {
+                const shuffledImages = shuffle(images);
+                shuffledImages.forEach(image => {
+                    const div = document.createElement('div');
+                    div.classList.add('image-item');
+                    div.setAttribute('data-correct', image.correct);
+                    div.innerHTML = `<img src="${image.src}" alt="圖片">`;
+                    div.addEventListener('click', function () {
+                        div.classList.toggle('selected');
+                    });
+                    imageGrid.appendChild(div);
+                });
+            }
+
+            loadImages();
+
+            // 提交按钮点击后验证答案
+            submitBtn.addEventListener('click', function () {
+                const selectedItems = document.querySelectorAll('.image-item.selected');
+                let correctSelection = true;
+
+                selectedItems.forEach(item => {
+                    if (item.getAttribute('data-correct') !== 'true') {
+                        correctSelection = false;
+                    }
+                });
+
+                const totalCorrectImages = document.querySelectorAll('.image-item[data-correct="true"]').length;
+                if (selectedItems.length !== totalCorrectImages) {
+                    correctSelection = false;
+                }
+
+                // 显示结果
+                if (correctSelection) {
+                    correctAnswerCount += 1;  // 增加正确答题人数
+                    resultText.style.color = 'green';  // 验证成功，显示绿色字体
+                    resultText.innerHTML = `恭喜恭喜! 驗證成功，孔子達人就是你XD<br>請聯繫HR/Alma領取小禮物<br>你是第 ${correctAnswerCount} 個答對的人!`;
+                } else {
+                    const randomError = errorMessages[Math.floor(Math.random() * errorMessages.length)];  // 随机选择错误提示
+                    resultText.style.color = 'red';  // 验证失败，显示红色字体
+                    resultText.textContent = randomError;
+                }
+            });
+        });
+    </script>
